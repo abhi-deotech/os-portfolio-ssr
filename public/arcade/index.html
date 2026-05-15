@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe-OS Arcade Core</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #game-container {
+            width: 100%;
+            height: 100%;
+        }
+        .loader-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+        .loader-ring {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(204, 151, 255, 0.1);
+            border-top: 3px solid #cc97ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .loader-text {
+            color: #cc97ff;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <div class="loader-container">
+            <div class="loader-ring"></div>
+            <div class="loader-text">Neural-Link Initializing...</div>
+        </div>
+    </div>
+
+    <!-- Virtual Gamepad Dependency -->
+    <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.10.1/dist/nipplejs.min.js"></script>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameUrl = urlParams.get('game');
+        const system = urlParams.get('system') || 'nes';
+
+        // Core mapping for stability - the loader sometimes fails to auto-map correctly
+        const coreMap = {
+            'doom': 'prboom',
+            'gba': 'mgba',
+            'gb': 'gambatte',
+            'gbc': 'gambatte',
+            'snes': 'snes9x',
+            'nes': 'fceumm'
+        };
+
+        // EmulatorJS Configuration
+        window.EJS_player = '#game';
+        window.EJS_gameUrl = gameUrl;
+        window.EJS_gameID = urlParams.get('game_id') || 'vibe-arcade';
+        window.EJS_core = coreMap[system] || system;
+        window.EJS_pathtodata = 'https://cdn.emulatorjs.org/stable/data/';
+        window.EJS_startOnLoaded = true;
+        window.EJS_color = '#cc97ff';
+        
+        // Performance & Audio Optimizations
+        window.EJS_threads = true;
+        window.EJS_sampleRate = 44100;
+        window.EJS_volume = 1.0;
+        window.EJS_videoSmooth = false; // DISABLED: Significant performance boost on low-end GPUs
+        
+        // Advanced 2024/2025 Caching & WASM flags
+        window.EJS_cache = {
+            enabled: true,
+            cacheMaxSizeMB: 512
+        };
+
+        // Input Settings
+        window.EJS_mouse = true;
+        window.EJS_keyboard = true;
+        window.EJS_touch = true;
+        window.EJS_gamePad = true;
+        
+        // Core Specific Tweaks (Modern RetroArch config mapping)
+        window.EJS_coreConfig = {
+            'video_vsync': 'true',
+            'video_threaded': 'true',
+            'video_smooth': 'false', // Redundant but good for safety
+            'audio_latency': '160', // Increased slightly more for better stability on lower-end CPUs
+            'audio_resampler': 'sinc',
+            'audio_out_rate': '44100',
+            'run_ahead_enabled': 'false', // DISABLED: Extremely CPU intensive, caused the "unplayable" lag
+            'run_ahead_frames': '0',
+            'run_ahead_secondary_instance': 'false'
+        };
+
+        if (system === 'doom') {
+            window.EJS_lockMouse = true;
+            window.EJS_coreConfig = {
+                ...window.EJS_coreConfig,
+                'prboom-mouse_on': 'enabled',
+                'prboom-resolution': '640x400',
+                'prboom-analog_deadzone': '15'
+            };
+        } else if (system === 'nes') {
+            window.EJS_coreConfig = {
+                ...window.EJS_coreConfig,
+                'fceumm_palette': 'asqrealc', // Better colors
+                'fceumm_overscan_h': 'enabled'
+            };
+        }
+
+        // Essential Buttons
+        window.EJS_Buttons = {
+            playPause: true,
+            restart: true,
+            mute: true,
+            settings: true,
+            fullscreen: true,
+            saveState: true,
+            loadState: true,
+            gamepad: true
+        };
+    </script>
+    <script src="https://cdn.emulatorjs.org/stable/data/loader.js"></script>
+</body>
+</html>
